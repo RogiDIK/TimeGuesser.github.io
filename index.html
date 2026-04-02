@@ -77,26 +77,36 @@
     .control-bar { padding: 10px 8px 14px; display: flex; flex-direction: column; gap: 10px; }
 
     @media (min-width: 980px) {
-      .game-layout { grid-template-columns: minmax(0, 1fr) 390px; gap: 14px; padding: 8px 14px 14px; }
+      /* На ПК только одна колонка — mainArea занимает всё, control-bar снизу */
+      .game-layout { grid-template-columns: 1fr; grid-template-rows: 1fr auto; gap: 10px; padding: 8px 14px 14px; }
       .main-area { margin-top: 0; border: 1px solid #dbe3ef; border-radius: 18px; }
       .control-bar {
-        margin-top: 0; border: 1px solid #dbe3ef; border-radius: 18px; align-self: stretch; justify-content: flex-end;
+        margin-top: 0; border: 1px solid #dbe3ef; border-radius: 14px;
         background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-        padding: 14px;
+        padding: 12px 14px; flex-direction: row; align-items: center; gap: 14px;
       }
-      /* Selector map: окно с overflow+scroll */
-      .selector-map-wrap {
-        flex: 1; min-height: 0; border: 1px solid #dbe3ef; border-radius: 14px;
-        overflow: hidden; position: relative; cursor: default;
-        transition: transform .18s cubic-bezier(.25,.8,.25,1), box-shadow .18s;
+      .control-bar .year-slider-area { flex: 1; }
+      .control-bar #actionBtn { flex: 0 0 auto; white-space: nowrap; padding: 11px 28px; }
+      /* На ПК roundScoreCards в control-bar скрыты — баллы в splitView */
+      .control-bar #roundScoreCards { display: none !important; }
+      /* selector-map-wrap скрыт на ПК — карта встроена в mainArea */
+      .selector-map-wrap { display: none !important; }
+      /* В toggleView на ПК: абсолютное позиционирование убираем, flex-row */
+      #toggleView { position: absolute !important; inset: 0 !important; display: flex !important; flex-direction: row; }
+      #imageView {
+        position: relative !important; flex: 1; min-width: 0;
+        opacity: 1 !important; pointer-events: auto !important;
       }
-      .selector-map-wrap:hover {
-        transform: scale(1.045);
-        box-shadow: 0 8px 32px rgba(30,58,138,.18);
-        z-index: 10;
-        cursor: crosshair;
+      #mapView {
+        position: relative !important; flex: 0 0 45%; min-width: 0;
+        border-left: 1px solid #dbe3ef; border-radius: 0 18px 18px 0;
+        opacity: 1 !important; pointer-events: auto !important;
+        width: auto !important; height: auto !important; inset: auto !important;
       }
-      #selectorMap { width: 100%; height: 100%; min-height: 180px; }
+      #mapView.view-hidden { display: none !important; }
+      /* Скрыть кнопку переключения на ПК */
+      #switchViewBtn { display: none !important; }
+      /* infoBlock скрыт на ПК в режиме результата (управляется JS) */
     }
 
     .view, #mapView { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -232,6 +242,8 @@
       .main-area { margin-top: 4px; min-height: 52vh; }
       .control-bar { padding: 8px 8px 10px; }
       .year-slider-area { padding: 8px 10px; }
+      /* На мобильной скрываем блок с описанием в splitView — данные уже есть в infoBlock */
+      #splitAnswerBlock { display: none !important; }
     }
 
     /* Desktop result scene */
@@ -569,16 +581,6 @@
           }
         }, timeout);
       }
-      function renderAnswerSummary(q, res) {
-        infoBlock.innerHTML = `
-          <div style="font-weight:800;color:#0f172a;">${q.description}</div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;">
-            <span class="year-chip">Правильный год: ${q.correctYear}</span>
-            <span class="year-chip">Разница: ${res.yearDiff} лет</span>
-            <span class="year-chip">Дистанция: ${res.distKm.toFixed(1)} км</span>
-          </div>`;
-      }
-
       function populateOrgSelects() {
         const optionsHtml = EDUCATION_ORGS.map((org) => `<option value="${org}">${org}</option>`).join('');
         playerOrgSelect.innerHTML = optionsHtml;
@@ -588,32 +590,77 @@
         try { return JSON.parse(localStorage.getItem(PLAYER_KEY) || 'null'); } catch { return null; }
       }
       function savePlayerProfile(profile) { localStorage.setItem(PLAYER_KEY, JSON.stringify(profile)); }
-      function loadLeaderboard() {
+      // ── Supabase ──────────────────────────────────────────────────────────
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpseGpzaG9yd3FtbnRqcWFkZ2R6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDAwMDAwMDAsImV4cCI6MjA1MzAwMDAwMH0.placeholder';
+
+      async function sbFetch(path, options = {}) {
+        const res = await fetch(SUPABASE_URL + path, {
+          ...options,
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json',
+            'Prefer': options.prefer || '',
+            ...(options.headers || {})
+          }
+        });
+        if (!res.ok) {
+          const err = await res.text();
+          throw new Error('Supabase error ' + res.status + ': ' + err);
+        }
+        return res.status === 204 ? null : res.json();
+      }
+
+      async function addLeaderboardEntry(points) {
+        if (!currentPlayer) return;
+        const entry = {
+          name: currentPlayer.name,
+          org: currentPlayer.org || 'Не указано',
+          course: currentPlayer.course || '—',
+          grp: currentPlayer.group || '—',
+          points: Math.floor(points),
+          created_at: new Date().toISOString()
+        };
+        // Сохраняем локально всегда (резервная копия)
+        try {
+          const list = JSON.parse(localStorage.getItem(LEADERBOARD_KEY) || '[]');
+          list.push({ ...entry, group: entry.grp });
+          localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(list));
+        } catch {}
+        // Пробуем отправить в Supabase
+        try {
+          await sbFetch('/rest/v1/leaderboard', {
+            method: 'POST',
+            prefer: 'return=minimal',
+            body: JSON.stringify(entry)
+          });
+        } catch (e) {
+          console.warn('Supabase write failed, используются локальные данные:', e.message);
+        }
+      }
+
+      async function loadLeaderboardData() {
+        // Сначала пробуем Supabase
+        try {
+          const rows = await sbFetch('/rest/v1/leaderboard?select=*&order=points.desc&limit=500');
+          if (Array.isArray(rows)) {
+            // Нормализуем поле group (в БД может быть grp)
+            return rows.map(r => ({ ...r, group: r.grp || r.group || '—' }));
+          }
+        } catch (e) {
+          console.warn('Supabase read failed, используются локальные данные:', e.message);
+        }
+        // Фоллбэк — локальное хранилище
         try { return JSON.parse(localStorage.getItem(LEADERBOARD_KEY) || '[]'); } catch { return []; }
       }
-      function saveLeaderboard(entries) { localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(entries)); }
-      function addLeaderboardEntry(points) {
-        if (!currentPlayer) return;
-        const list = loadLeaderboard();
-        list.push({
-          name: currentPlayer.name,
-          org: currentPlayer.org,
-          course: currentPlayer.course || '—',
-          group: currentPlayer.group || '—',
-          points: Math.floor(points),
-          mode: gameMode,
-          date: new Date().toISOString()
-        });
-        saveLeaderboard(list);
-      }
-      function renderLeaderboard() {
+
+      async function renderLeaderboard() {
         const type = lbActiveTab;
         const org = lbOrgFilter.value.trim();
         const course = lbCourseFilter.value.trim();
         const group = lbGroupFilter.value.trim().toLowerCase();
-        let rows = loadLeaderboard();
 
-        // Update filter visibility
+        // Показываем нужные фильтры
         lbOrgFilter.classList.toggle('hidden', type !== 'org' && type !== 'course' && type !== 'group');
         lbCourseFilter.classList.toggle('hidden', type !== 'course');
         lbGroupFilter.classList.toggle('hidden', type !== 'group');
@@ -621,11 +668,12 @@
         const anyVisible = !lbOrgFilter.classList.contains('hidden') || !lbCourseFilter.classList.contains('hidden') || !lbGroupFilter.classList.contains('hidden');
         filtersDiv.style.display = anyVisible ? '' : 'none';
 
-        // Build thead
         const thead = byId('lbThead');
+        leaderboardBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#64748b;">Загрузка...</td></tr>';
+
+        let rows = await loadLeaderboardData();
 
         if (type === 'all_orgs') {
-          // Group by org, sum best score per player, then sum per org
           rows = rows.filter(r => r.org && r.org !== 'Не указано');
           const orgMap = {};
           rows.forEach(r => {
@@ -638,16 +686,16 @@
           leaderboardBody.innerHTML = orgRows.map((r, idx) => {
             const cls = idx === 0 ? 'rank-gold' : idx === 1 ? 'rank-silver' : idx === 2 ? 'rank-bronze' : '';
             return `<tr class="${cls}"><td>${idx+1}</td><td>${r.org}</td><td>${r.players}</td><td>${r.totalPoints}</td></tr>`;
-          }).join('') || '<tr><td colspan="4">Пока нет результатов.</td></tr>';
+          }).join('') || '<tr><td colspan="4" style="text-align:center;padding:20px;color:#64748b;">Пока нет результатов.</td></tr>';
           return;
         }
 
-        if (type === 'org') {
-          if (org) rows = rows.filter(r => r.org === org);
-        } else if (type === 'course') {
+        if (type === 'org' && org) rows = rows.filter(r => r.org === org);
+        if (type === 'course') {
           if (org) rows = rows.filter(r => r.org === org);
           if (course) rows = rows.filter(r => String(r.course) === course);
-        } else if (type === 'group') {
+        }
+        if (type === 'group') {
           if (org) rows = rows.filter(r => r.org === org);
           if (group) rows = rows.filter(r => String(r.group).toLowerCase() === group);
         }
@@ -656,8 +704,9 @@
         thead.innerHTML = '<tr><th>#</th><th>Игрок</th><th>Учреждение</th><th>Курс</th><th>Взвод/группа</th><th>Очки</th><th>Дата</th></tr>';
         leaderboardBody.innerHTML = rows.map((r, idx) => {
           const cls = idx === 0 ? 'rank-gold' : idx === 1 ? 'rank-silver' : idx === 2 ? 'rank-bronze' : '';
-          return `<tr class="${cls}"><td>${idx+1}</td><td>${r.name}</td><td>${r.org}</td><td>${r.course}</td><td>${r.group}</td><td>${r.points}</td><td>${new Date(r.date).toLocaleDateString('ru-RU')}</td></tr>`;
-        }).join('') || '<tr><td colspan="7">Пока нет результатов.</td></tr>';
+          const date = r.created_at ? new Date(r.created_at).toLocaleDateString('ru-RU') : (r.date ? new Date(r.date).toLocaleDateString('ru-RU') : '—');
+          return `<tr class="${cls}"><td>${idx+1}</td><td>${r.name}</td><td>${r.org}</td><td>${r.course}</td><td>${r.group}</td><td>${r.points}</td><td>${date}</td></tr>`;
+        }).join('') || '<tr><td colspan="7" style="text-align:center;padding:20px;color:#64748b;">Пока нет результатов.</td></tr>';
       }
       function resetSwitchButtonPosition() {
         switchViewBtn.style.right = '16px';
@@ -914,7 +963,10 @@
         img.src = url;
       }
 
+      function isDesktop() { return window.innerWidth >= 980; }
+
       function switchView() {
+        if (isDesktop()) return; // На ПК переключение не нужно — карта всегда видна
         if (currentView === 'image') {
           currentView = 'map';
           mapView.classList.remove('view-hidden');
@@ -940,13 +992,22 @@
         roundBadge.textContent = `Раунд ${currentIndex + 1}/${currentQuestions.length}`;
         totalScoreSpan.textContent = Math.floor(totalPoints);
         yearSliderArea.style.display = '';
-        document.querySelector('.selector-map-wrap').style.display = '';
         roundScoreCards.classList.add('hidden');
         toggleViewDiv.classList.remove('hidden');
         splitViewDiv.classList.add('hidden');
-        splitAnswerDescription.textContent = '—';
-        splitCorrectYear.textContent = '—';
-        splitYearDiff.textContent = '—';
+        byId('splitAnswerDescription').textContent = '—';
+        byId('splitCorrectYear').textContent = '—';
+        byId('splitYearDiff').textContent = '—';
+        infoBlock.style.display = '';
+
+        // На ПК карта всегда видна рядом с фото
+        if (isDesktop()) {
+          mapView.classList.remove('view-hidden');
+          imageView.classList.remove('view-hidden');
+          currentView = 'image';
+        } else {
+          if (currentView === 'map') switchView();
+        }
 
         selectedYear = savedYear ?? Math.floor(Math.random() * (2024 - 1850 + 1)) + 1850;
         yearSlider.value = selectedYear;
@@ -962,7 +1023,7 @@
         resetSwitchButtonPosition();
 
         map?.setCenter([55.7537, 37.6199], 6, { duration: 250 });
-        if (currentView === 'map') switchView();
+        setTimeout(() => map?.container?.fitToViewport(), 50);
       }
 
       function handleCheck() {
@@ -981,18 +1042,26 @@
         saveGameState();
 
         yearSliderArea.style.display = 'none';
-        document.querySelector('.selector-map-wrap').style.display = 'none';
         toggleViewDiv.classList.add('hidden');
         splitViewDiv.classList.remove('hidden');
 
-        distanceCard.textContent = `Разница в местоположении: ${res.distKm.toFixed(1)} км`;
-        distancePoints.textContent = res.pointsDist;
-        yearPoints.textContent = res.pointsYear;
-        roundPoints.textContent = res.total;
+        // На ПК infoBlock скрыт — вся инфа в splitView
+        if (isDesktop()) {
+          infoBlock.style.display = 'none';
+        }
+
+        distanceCard.textContent = `Расстояние: ${res.distKm.toFixed(1)} км`;
+        // Только splitView карточки — roundScoreCards в control-bar скрыты на ПК в результате
         splitDistancePoints.textContent = res.pointsDist;
         splitYearPoints.textContent = res.pointsYear;
         splitRoundPoints.textContent = res.total;
-        roundScoreCards.classList.remove('hidden');
+        // На мобильной control-bar ещё виден — показываем и там
+        if (!isDesktop()) {
+          distancePoints.textContent = res.pointsDist;
+          yearPoints.textContent = res.pointsYear;
+          roundPoints.textContent = res.total;
+          roundScoreCards.classList.remove('hidden');
+        }
 
         byId('splitAnswerDescription').textContent = q.description;
         byId('splitCorrectYear').textContent = q.correctYear;
@@ -1002,8 +1071,10 @@
         updateSplitImagePreview();
         initSplitMap().catch(console.error);
 
-        setInfo('Раунд завершён. Ознакомьтесь с результатом и перейдите к следующему вопросу.', 3200);
-        renderAnswerSummary(q, res);
+        // На мобильной показываем краткое сообщение в infoBlock (без дублирования данных)
+        if (!isDesktop()) {
+          infoBlock.innerHTML = 'Раунд завершён. Перейдите к следующему вопросу.';
+        }
 
         const goNext = () => {
           currentIndex += 1;
@@ -1107,11 +1178,18 @@
           saveGameState();
         }
 
-        mapView.classList.add('view-hidden');
-        imageView.classList.remove('view-hidden');
+        // На ПК карта всегда видна рядом с фото
+        if (isDesktop()) {
+          mapView.classList.remove('view-hidden');
+          imageView.classList.remove('view-hidden');
+        } else {
+          mapView.classList.add('view-hidden');
+          imageView.classList.remove('view-hidden');
+        }
         currentView = 'image';
         switchIcon.textContent = '🗺️';
         resetSwitchButtonPosition();
+        setTimeout(() => map?.container?.fitToViewport(), 100);
       }
 
       yearSlider.addEventListener('input', () => {
