@@ -789,6 +789,9 @@
         roundScoreCards.classList.add('hidden');
         toggleViewDiv.classList.remove('hidden');
         splitViewDiv.classList.add('hidden');
+        splitAnswerDescription.textContent = '—';
+        splitCorrectYear.textContent = '—';
+        splitYearDiff.textContent = '—';
 
         selectedYear = savedYear ?? Math.floor(Math.random() * (2024 - 1850 + 1)) + 1850;
         yearSlider.value = selectedYear;
