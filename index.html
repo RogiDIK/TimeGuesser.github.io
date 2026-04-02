@@ -84,6 +84,19 @@
         background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
         padding: 14px;
       }
+      /* Selector map: окно с overflow+scroll */
+      .selector-map-wrap {
+        flex: 1; min-height: 0; border: 1px solid #dbe3ef; border-radius: 14px;
+        overflow: hidden; position: relative; cursor: default;
+        transition: transform .18s cubic-bezier(.25,.8,.25,1), box-shadow .18s;
+      }
+      .selector-map-wrap:hover {
+        transform: scale(1.045);
+        box-shadow: 0 8px 32px rgba(30,58,138,.18);
+        z-index: 10;
+        cursor: crosshair;
+      }
+      #selectorMap { width: 100%; height: 100%; min-height: 180px; }
     }
 
     .view, #mapView { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -169,18 +182,47 @@
       width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; font: inherit;
     }
     .leaderboard-screen {
-      padding: 12px; gap: 10px; background: #f8fafc;
+      padding: 0; gap: 0; background: #f1f5f9; overflow: hidden;
     }
-    .leaderboard-toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
-    .leaderboard-toolbar select, .leaderboard-toolbar input {
+    .lb-tabs {
+      display: flex; gap: 0; background: #1e3a8a; overflow-x: auto; scrollbar-width: none; flex-shrink: 0;
+    }
+    .lb-tabs::-webkit-scrollbar { display: none; }
+    .lb-tab {
+      flex: 0 0 auto; border: none; background: transparent; color: rgba(255,255,255,0.65);
+      padding: 11px 16px; font-size: .88rem; font-weight: 700; cursor: pointer;
+      border-bottom: 3px solid transparent; white-space: nowrap; font-family: inherit;
+      transition: color .15s, border-color .15s;
+    }
+    .lb-tab.active { color: #fff; border-bottom-color: #60a5fa; }
+    .lb-tab:hover:not(.active) { color: #e2e8f0; }
+    .lb-filters {
+      display: flex; gap: 8px; flex-wrap: wrap; padding: 10px 12px; background: #fff;
+      border-bottom: 1px solid #dbe3ef; flex-shrink: 0; min-height: 0;
+    }
+    .lb-filters:empty, .lb-filters:not(:has(.lb-filter-select:not(.hidden), .lb-filter-input:not(.hidden))) {
+      padding: 0; border-bottom: none;
+    }
+    .lb-filter-select, .lb-filter-input {
       border: 1px solid #cbd5e1; border-radius: 10px; padding: 8px 10px; font: inherit;
+      background: #f8fafc; font-size: .9rem;
     }
     .leaderboard-table-wrap {
-      flex: 1; overflow: auto; border: 1px solid #dbe3ef; border-radius: 12px; background: #fff;
+      flex: 1; overflow: auto; background: #fff; margin: 10px 12px 12px;
+      border: 1px solid #dbe3ef; border-radius: 14px;
     }
-    table { width: 100%; border-collapse: collapse; min-width: 760px; }
-    th, td { padding: 10px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: .92rem; }
-    th { position: sticky; top: 0; background: #f1f5f9; z-index: 1; }
+    table { width: 100%; border-collapse: collapse; }
+    th { position: sticky; top: 0; background: #1e3a8a; color: #fff; z-index: 1; padding: 11px 10px; text-align: left; font-size: .85rem; font-weight: 700; }
+    th:first-child { border-radius: 14px 0 0 0; }
+    th:last-child { border-radius: 0 14px 0 0; }
+    td { padding: 10px 10px; border-bottom: 1px solid #e9eff6; font-size: .9rem; }
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    tr:hover td { background: #eff6ff; }
+    td:first-child { font-weight: 800; color: #1e3a8a; }
+    .rank-gold td:first-child { color: #b45309; }
+    .rank-silver td:first-child { color: #475569; }
+    .rank-bronze td:first-child { color: #92400e; }
 
     @media (max-width: 979px) {
       .game-header { padding: 8px 10px; }
@@ -191,6 +233,70 @@
       .control-bar { padding: 8px 8px 10px; }
       .year-slider-area { padding: 8px 10px; }
     }
+
+    /* Desktop result scene */
+    @media (min-width: 980px) {
+      .split-container {
+        flex-direction: row !important;
+        gap: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+      }
+      .split-columns {
+        display: flex !important;
+        flex-direction: row !important;
+        width: 100%;
+        height: 100%;
+        gap: 0;
+      }
+      .split-left {
+        flex: 0 0 55%;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px;
+        padding: 12px;
+        min-height: 0;
+        overflow: hidden;
+      }
+      .split-image {
+        flex: 1;
+        min-height: 0;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #eef2f6;
+        position: relative;
+      }
+      #distanceCard {
+        flex: 0 0 auto;
+        font-size: 1rem;
+      }
+      .split-right {
+        flex: 1;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px;
+        padding: 12px;
+        min-height: 0;
+        border-left: 1px solid #dbe3ef;
+      }
+      #splitMap {
+        flex: 1;
+        min-height: 0;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .split-right-controls {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+    }
+
+    .split-answer-block {
+      background: #f0f6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 10px 12px; flex: 0 0 auto;
+    }
+    .split-score-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 
     .ymaps-copyrights-pane, .ymaps-logo, .ymaps-copyright,
     [class*="ymaps-copyright"], [class*="ymaps-logo"],
@@ -266,25 +372,21 @@
       <div class="game-title">Таблица лидеров</div>
       <div style="width:54px"></div>
     </div>
-    <div class="leaderboard-toolbar">
-      <select id="lbTypeSelect">
-        <option value="overall">Общая таблица</option>
-        <option value="all_orgs">По всем учреждениям</option>
-        <option value="org">По учреждению</option>
-        <option value="course">По курсу</option>
-        <option value="group">По взводу/группе</option>
-      </select>
-      <select id="lbOrgFilter"></select>
-      <input id="lbCourseFilter" placeholder="Курс">
-      <input id="lbGroupFilter" placeholder="Взвод/группа">
+    <div class="lb-tabs">
+      <button class="lb-tab active" data-tab="overall">Все игроки</button>
+      <button class="lb-tab" data-tab="all_orgs">Учреждения</button>
+      <button class="lb-tab" data-tab="org">По учреждению</button>
+      <button class="lb-tab" data-tab="course">По курсу</button>
+      <button class="lb-tab" data-tab="group">По взводу</button>
+    </div>
+    <div id="lbFilters" class="lb-filters">
+      <select id="lbOrgFilter" class="lb-filter-select hidden"></select>
+      <input id="lbCourseFilter" class="lb-filter-input hidden" placeholder="Курс">
+      <input id="lbGroupFilter" class="lb-filter-input hidden" placeholder="Взвод/группа">
     </div>
     <div class="leaderboard-table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th><th>Игрок</th><th>Учреждение</th><th>Курс</th><th>Взвод/группа</th><th>Очки</th><th>Режим</th><th>Дата</th>
-          </tr>
-        </thead>
+      <table id="lbTable">
+        <thead id="lbThead"></thead>
         <tbody id="leaderboardBody"></tbody>
       </table>
     </div>
@@ -325,6 +427,13 @@
           <div class="split-columns">
             <div class="split-left">
               <div id="distanceCard" class="distance-card">Разница: —</div>
+              <div id="splitAnswerBlock" class="split-answer-block">
+                <div id="splitAnswerDescription" class="result-description">—</div>
+                <div class="result-year-row">
+                  <span class="year-chip">Год: <span id="splitCorrectYear">—</span></span>
+                  <span class="year-diff">Разница: <span id="splitYearDiff">—</span> лет</span>
+                </div>
+              </div>
               <div class="split-image">
                 <div id="splitImageWrapper" class="image-wrapper">
                   <img id="splitHistoricalImageBg" class="historical-img historical-bg" src="" alt="" aria-hidden="true">
@@ -375,6 +484,7 @@
         { imageUrl: 'img/balaklava.jpg', correctLat: 45.0237, correctLng: 35.4031, correctYear: 1855, description: 'Генуэзская крепость в годы Крымской войны. Балаклава.' },
         { imageUrl: 'img/gorko.jpg', correctLat: 55.7651, correctLng: 37.6043, correctYear: 1941, description: 'Пост ОРУД на улице Горького (ныне Тверская), Москва.' }
       ];
+      const SUPABASE_URL = 'https://zlxjshorwqmntjqadgdz.supabase.co';
       const QUESTIONS_PER_GAME = 5;
       const SAVE_KEY = 'historyguesser_save';
       const LEADERBOARD_KEY = 'historyguesser_leaderboard_v1';
@@ -382,7 +492,7 @@
       const MAX_SCALE = 6;
       const OVERDRAW_PX = 25;
       const DRAG_THRESHOLD = 6;
-      const EDUCATION_ORGS = ['Не указано', 'Военная академия связи', 'Михайловская военная артиллерийская академия', 'Военно-космическая академия им. А.Ф. Можайского', 'Военно-медицинская академия', 'Другое'];
+      const EDUCATION_ORGS = ['Не указано', 'Московский университет МВД России имени В. Я. Кикотя', 'Военная академия связи', 'Михайловская военная артиллерийская академия', 'Военно-космическая академия им. А.Ф. Можайского', 'Военно-медицинская академия', 'Другое'];
 
       const byId = (id) => document.getElementById(id);
       const yearSlider = byId('yearSlider');
@@ -411,10 +521,10 @@
       const switchIcon = byId('switchIcon');
       const playerOrgSelect = byId('playerOrgSelect');
       const lbOrgFilter = byId('lbOrgFilter');
-      const lbTypeSelect = byId('lbTypeSelect');
       const lbCourseFilter = byId('lbCourseFilter');
       const lbGroupFilter = byId('lbGroupFilter');
       const leaderboardBody = byId('leaderboardBody');
+      let lbActiveTab = 'overall';
 
       const imageWrapper = byId('imageWrapper');
       const splitImageWrapper = byId('splitImageWrapper');
@@ -497,22 +607,57 @@
         saveLeaderboard(list);
       }
       function renderLeaderboard() {
-        const type = lbTypeSelect.value;
+        const type = lbActiveTab;
         const org = lbOrgFilter.value.trim();
         const course = lbCourseFilter.value.trim();
         const group = lbGroupFilter.value.trim().toLowerCase();
         let rows = loadLeaderboard();
-        if (type === 'org' && org) rows = rows.filter((r) => r.org === org);
-        if (type === 'course' && course) rows = rows.filter((r) => String(r.course) === course);
-        if (type === 'group' && group) rows = rows.filter((r) => String(r.group).toLowerCase() === group);
-        if (type === 'all_orgs') rows = rows.filter((r) => r.org && r.org !== 'Не указано');
+
+        // Update filter visibility
+        lbOrgFilter.classList.toggle('hidden', type !== 'org' && type !== 'course' && type !== 'group');
+        lbCourseFilter.classList.toggle('hidden', type !== 'course');
+        lbGroupFilter.classList.toggle('hidden', type !== 'group');
+        const filtersDiv = byId('lbFilters');
+        const anyVisible = !lbOrgFilter.classList.contains('hidden') || !lbCourseFilter.classList.contains('hidden') || !lbGroupFilter.classList.contains('hidden');
+        filtersDiv.style.display = anyVisible ? '' : 'none';
+
+        // Build thead
+        const thead = byId('lbThead');
+
+        if (type === 'all_orgs') {
+          // Group by org, sum best score per player, then sum per org
+          rows = rows.filter(r => r.org && r.org !== 'Не указано');
+          const orgMap = {};
+          rows.forEach(r => {
+            if (!orgMap[r.org]) orgMap[r.org] = { org: r.org, totalPoints: 0, players: 0 };
+            orgMap[r.org].totalPoints += r.points;
+            orgMap[r.org].players += 1;
+          });
+          const orgRows = Object.values(orgMap).sort((a, b) => b.totalPoints - a.totalPoints);
+          thead.innerHTML = '<tr><th>#</th><th>Учреждение</th><th>Игроков</th><th>Суммарно очков</th></tr>';
+          leaderboardBody.innerHTML = orgRows.map((r, idx) => {
+            const cls = idx === 0 ? 'rank-gold' : idx === 1 ? 'rank-silver' : idx === 2 ? 'rank-bronze' : '';
+            return `<tr class="${cls}"><td>${idx+1}</td><td>${r.org}</td><td>${r.players}</td><td>${r.totalPoints}</td></tr>`;
+          }).join('') || '<tr><td colspan="4">Пока нет результатов.</td></tr>';
+          return;
+        }
+
+        if (type === 'org') {
+          if (org) rows = rows.filter(r => r.org === org);
+        } else if (type === 'course') {
+          if (org) rows = rows.filter(r => r.org === org);
+          if (course) rows = rows.filter(r => String(r.course) === course);
+        } else if (type === 'group') {
+          if (org) rows = rows.filter(r => r.org === org);
+          if (group) rows = rows.filter(r => String(r.group).toLowerCase() === group);
+        }
 
         rows.sort((a, b) => b.points - a.points);
-        leaderboardBody.innerHTML = rows.map((r, idx) => `
-          <tr>
-            <td>${idx + 1}</td><td>${r.name}</td><td>${r.org}</td><td>${r.course}</td><td>${r.group}</td><td>${r.points}</td><td>${r.mode}</td><td>${new Date(r.date).toLocaleDateString('ru-RU')}</td>
-          </tr>
-        `).join('') || '<tr><td colspan="8">Пока нет результатов.</td></tr>';
+        thead.innerHTML = '<tr><th>#</th><th>Игрок</th><th>Учреждение</th><th>Курс</th><th>Взвод/группа</th><th>Очки</th><th>Дата</th></tr>';
+        leaderboardBody.innerHTML = rows.map((r, idx) => {
+          const cls = idx === 0 ? 'rank-gold' : idx === 1 ? 'rank-silver' : idx === 2 ? 'rank-bronze' : '';
+          return `<tr class="${cls}"><td>${idx+1}</td><td>${r.name}</td><td>${r.org}</td><td>${r.course}</td><td>${r.group}</td><td>${r.points}</td><td>${new Date(r.date).toLocaleDateString('ru-RU')}</td></tr>`;
+        }).join('') || '<tr><td colspan="7">Пока нет результатов.</td></tr>';
       }
       function resetSwitchButtonPosition() {
         switchViewBtn.style.right = '16px';
@@ -540,13 +685,22 @@
         const yearDiff = Math.abs(userYear - correctYear);
         const pointsYear = Math.max(0, 500 - yearDiff * 10);
 
-        const distM = distKm * 1000;
+        // Distance scoring: 150м→500, 100км→350, 250км→250, 500км→100, 1000км→50, 2500км→0
         let pointsDist = 0;
-        if (distM <= 150) pointsDist = 500;
-        else if (distM >= 2500000) pointsDist = 0;
-        else {
-          const t = (distM - 150) / (2500000 - 150);
-          pointsDist = Math.round(500 * (1 - Math.pow(t, 3)));
+        if (distKm <= 0.15) {
+          pointsDist = 500;
+        } else if (distKm <= 100) {
+          pointsDist = Math.round(350 + (500 - 350) * (1 - (distKm - 0.15) / (100 - 0.15)));
+        } else if (distKm <= 250) {
+          pointsDist = Math.round(250 + (350 - 250) * (1 - (distKm - 100) / (250 - 100)));
+        } else if (distKm <= 500) {
+          pointsDist = Math.round(100 + (250 - 100) * (1 - (distKm - 250) / (500 - 250)));
+        } else if (distKm <= 1000) {
+          pointsDist = Math.round(50 + (100 - 50) * (1 - (distKm - 500) / (1000 - 500)));
+        } else if (distKm <= 2500) {
+          pointsDist = Math.round(50 * (1 - (distKm - 1000) / (2500 - 1000)));
+        } else {
+          pointsDist = 0;
         }
 
         return { total: pointsYear + pointsDist, distKm, yearDiff, pointsYear, pointsDist };
@@ -786,6 +940,7 @@
         roundBadge.textContent = `Раунд ${currentIndex + 1}/${currentQuestions.length}`;
         totalScoreSpan.textContent = Math.floor(totalPoints);
         yearSliderArea.style.display = '';
+        document.querySelector('.selector-map-wrap').style.display = '';
         roundScoreCards.classList.add('hidden');
         toggleViewDiv.classList.remove('hidden');
         splitViewDiv.classList.add('hidden');
@@ -826,6 +981,7 @@
         saveGameState();
 
         yearSliderArea.style.display = 'none';
+        document.querySelector('.selector-map-wrap').style.display = 'none';
         toggleViewDiv.classList.add('hidden');
         splitViewDiv.classList.remove('hidden');
 
@@ -837,6 +993,10 @@
         splitYearPoints.textContent = res.pointsYear;
         splitRoundPoints.textContent = res.total;
         roundScoreCards.classList.remove('hidden');
+
+        byId('splitAnswerDescription').textContent = q.description;
+        byId('splitCorrectYear').textContent = q.correctYear;
+        byId('splitYearDiff').textContent = res.yearDiff;
 
         splitHistoricalImage.src = historicalImg.src;
         updateSplitImagePreview();
@@ -1113,8 +1273,24 @@
         byId('leaderboardScreen').classList.add('hidden');
         byId('menuScreen').classList.remove('hidden');
       });
-      [lbTypeSelect, lbOrgFilter].forEach((el) => el.addEventListener('change', renderLeaderboard));
-      [lbCourseFilter, lbGroupFilter].forEach((el) => el.addEventListener('input', renderLeaderboard));
+
+      // Tab switching
+      document.querySelectorAll('.lb-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          lbActiveTab = tab.dataset.tab;
+          // Reset filters
+          lbOrgFilter.value = '';
+          lbCourseFilter.value = '';
+          lbGroupFilter.value = '';
+          renderLeaderboard();
+        });
+      });
+
+      lbOrgFilter.addEventListener('change', renderLeaderboard);
+      lbCourseFilter.addEventListener('input', renderLeaderboard);
+      lbGroupFilter.addEventListener('input', renderLeaderboard);
 
       byId('closeGameModeModal').addEventListener('click', () => byId('gameModeModal').classList.add('hidden'));
       byId('closePlayerDataModal').addEventListener('click', () => byId('playerDataModal').classList.add('hidden'));
