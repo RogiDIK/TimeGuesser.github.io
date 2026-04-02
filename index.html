@@ -127,6 +127,8 @@
 
     .split-container { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px; padding: 10px; overflow: auto; }
     .split-map, .split-image { min-height: 180px; flex: 1; border-radius: 12px; overflow: hidden; background: #eef2f6; position: relative; }
+    .split-columns { display: contents; }
+    .split-left, .split-right { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
     .distance-card { border: 1px solid #dbe3ef; border-radius: 12px; padding: 10px 12px; font-weight: 700; color: #1e3a8a; text-align: center; background: #fff; }
     .result-description { font-size: clamp(1rem, 2.2vw, 1.25rem); font-weight: 700; color: #0f172a; line-height: 1.35; }
     .result-year-row { margin-top: 8px; display: flex; gap: 10px; flex-wrap: wrap; }
@@ -228,10 +230,11 @@
       <div class="modal-close" id="closeRulesModal">✕</div>
       <p style="font-size:1.25rem;font-weight:800;text-align:center;margin-bottom:0.8rem;">📜 Правила игры</p>
       <ul class="rules-list">
-        <li><span class="rule-bullet"></span><strong>Цель:</strong> определить место съёмки исторической фотографии и указать год.</li>
-        <li><span class="rule-bullet"></span><strong>Действие:</strong> выберите точку на карте и установите год на ползунке.</li>
-        <li><span class="rule-bullet"></span><strong>Очки за место:</strong> 500 баллов при ошибке до 150 м; 0 баллов при 2500 км и более.</li>
-        <li><span class="rule-bullet"></span><strong>Очки за год:</strong> максимум 500 баллов, далее снижение пропорционально ошибке.</li>
+        <li><span class="rule-bullet"></span><strong>Назначение игры:</strong> определить предполагаемое место съёмки исторической фотографии и указать наиболее вероятный год.</li>
+        <li><span class="rule-bullet"></span><strong>Порядок действий:</strong> выберите точку на карте и установите год при помощи ползунка, затем нажмите «Проверить».</li>
+        <li><span class="rule-bullet"></span><strong>Оценка за местоположение:</strong> максимум 500 баллов при минимальной ошибке; по мере увеличения дистанции количество баллов уменьшается до 0.</li>
+        <li><span class="rule-bullet"></span><strong>Оценка за год:</strong> максимум 500 баллов при точном совпадении; далее начисление снижается пропорционально разнице лет.</li>
+        <li><span class="rule-bullet"></span><strong>Итог раунда:</strong> показываются правильная точка, дистанция ошибки, правильный год, разница лет и суммарные баллы за раунд.</li>
       </ul>
       <div class="modal-buttons"><button class="modal-btn" id="closeRulesBtn">Понятно</button></div>
     </div>
@@ -318,22 +321,34 @@
         </div>
 
         <div id="splitView" class="split-container hidden">
-          <div id="splitMap" class="split-map"></div>
-          <div id="distanceCard" class="distance-card">Разница: —</div>
-          <div>
-            <div id="resultDescription" class="result-description">—</div>
-            <div class="result-year-row">
-              <div class="year-chip">Год: <span id="correctYearChip">—</span></div>
-              <div class="year-diff" id="yearDiffText">Разница: —</div>
+          <div class="split-columns">
+            <div class="split-left">
+              <div id="distanceCard" class="distance-card">Разница: —</div>
+              <div class="split-image">
+                <div id="splitImageWrapper" class="image-wrapper">
+                  <img id="splitHistoricalImageBg" class="historical-img historical-bg" src="" alt="" aria-hidden="true">
+                  <img id="splitHistoricalImage" class="historical-img" src="" alt="Историческое фото">
+                  <div class="image-overlay" aria-hidden="true"></div>
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="split-image">
-            <div id="splitImageWrapper" class="image-wrapper"><img id="splitHistoricalImage" class="historical-img" src="" alt="Историческое фото"></div>
+            <div class="split-right">
+              <div id="splitMap" class="split-map"></div>
+              <div class="split-right-controls">
+                <div class="split-score-grid">
+                  <div class="score-card"><span>За место</span><strong id="splitDistancePoints">0</strong></div>
+                  <div class="score-card"><span>За год</span><strong id="splitYearPoints">0</strong></div>
+                  <div class="score-card"><span>За раунд</span><strong id="splitRoundPoints">0</strong></div>
+                </div>
+                <button id="splitNextBtn" class="big-btn split-next-btn">➡️ СЛЕДУЮЩИЙ ВОПРОС</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <div class="control-bar">
+        <div class="selector-map-wrap"><div id="selectorMap"></div></div>
         <div id="yearSliderArea" class="year-slider-area">
           <div id="yearValueDisplay" class="year-display">1950</div>
           <input type="range" id="yearSlider" min="1850" max="2024" step="1" value="1950">
@@ -380,15 +395,17 @@
       const toggleViewDiv = byId('toggleView');
       const splitViewDiv = byId('splitView');
       const splitMapDiv = byId('splitMap');
+      const selectorMapDiv = byId('selectorMap');
       const yearSliderArea = byId('yearSliderArea');
       const roundScoreCards = byId('roundScoreCards');
       const distanceCard = byId('distanceCard');
-      const resultDescription = byId('resultDescription');
-      const correctYearChip = byId('correctYearChip');
-      const yearDiffText = byId('yearDiffText');
       const distancePoints = byId('distancePoints');
       const yearPoints = byId('yearPoints');
       const roundPoints = byId('roundPoints');
+      const splitDistancePoints = byId('splitDistancePoints');
+      const splitYearPoints = byId('splitYearPoints');
+      const splitRoundPoints = byId('splitRoundPoints');
+      const splitNextBtn = byId('splitNextBtn');
       const switchViewBtn = byId('switchViewBtn');
       const switchIcon = byId('switchIcon');
       const playerOrgSelect = byId('playerOrgSelect');
@@ -403,9 +420,11 @@
       const historicalImg = byId('historicalImage');
       const historicalImgBg = byId('historicalImageBg');
       const splitHistoricalImage = byId('splitHistoricalImage');
+      const splitHistoricalImageBg = byId('splitHistoricalImageBg');
 
       let map = null;
       let splitMap = null;
+      let selectorMap = null;
       let userMarker = null, correctMarker = null, distanceLine = null;
       let selectedLat = null, selectedLng = null, selectedYear = 1950;
       let totalPoints = 0, currentIndex = 0;
@@ -549,20 +568,42 @@
               suppressMapOpenBlock: true, yandexMapDisablePoiInteractivity: true
             });
             map.options.set('restrictMapArea', [[41, 19], [82, 190]]);
-            map.events.add('click', (e) => {
-              if (questionAnswered || waitingNext) return setInfo('Вопрос уже проверен. Перейдите к следующему.');
-              [selectedLat, selectedLng] = e.get('coords');
-              if (userMarker) map.geoObjects.remove(userMarker);
-              userMarker = new ymaps.Placemark([selectedLat, selectedLng], { hintContent: 'Ваш выбор' }, { preset: 'islands#blueCircleIcon' });
-              map.geoObjects.add(userMarker);
-              setInfo(`Координаты выбраны: ${selectedLat.toFixed(2)}°, ${selectedLng.toFixed(2)}°`, 1800);
-            });
+            map.events.add('click', (e) => applyUserSelection(e.get('coords')));
             hideCopyrights();
             resolve();
           };
 
           if (window.ymaps) ymaps.ready(boot);
           else setTimeout(() => initMainMap().then(resolve), 120);
+        });
+      }
+      function applyUserSelection(coords) {
+        if (questionAnswered || waitingNext) return setInfo('Вопрос уже проверен. Перейдите к следующему.');
+        [selectedLat, selectedLng] = coords;
+        if (userMarker) map.geoObjects.remove(userMarker);
+        userMarker = new ymaps.Placemark([selectedLat, selectedLng], { hintContent: 'Ваш выбор' }, { preset: 'islands#blueCircleIcon' });
+        map.geoObjects.add(userMarker);
+
+        if (selectorMap) {
+          selectorMap.geoObjects.removeAll();
+          selectorMap.geoObjects.add(new ymaps.Placemark([selectedLat, selectedLng], { hintContent: 'Ваш выбор' }, { preset: 'islands#blueCircleIcon' }));
+        }
+        setInfo(`Координаты выбраны: ${selectedLat.toFixed(2)}°, ${selectedLng.toFixed(2)}°`, 1800);
+      }
+
+      async function initSelectorMap() {
+        if (window.innerWidth < 980 || !window.ymaps) return;
+        return new Promise((resolve) => {
+          ymaps.ready(() => {
+            if (selectorMap) selectorMap.destroy();
+            selectorMap = new ymaps.Map(selectorMapDiv, { center: [55.7537, 37.6199], zoom: 4, controls: [] }, {
+              suppressMapOpenBlock: true, yandexMapDisablePoiInteractivity: true
+            });
+            selectorMap.options.set('restrictMapArea', [[41, 19], [82, 190]]);
+            selectorMap.events.add('click', (e) => applyUserSelection(e.get('coords')));
+            hideCopyrights();
+            resolve();
+          });
         });
       }
 
@@ -598,6 +639,7 @@
         if (correctMarker) map.geoObjects.remove(correctMarker);
         if (distanceLine) map.geoObjects.remove(distanceLine);
         userMarker = correctMarker = distanceLine = null;
+        if (selectorMap) selectorMap.geoObjects.removeAll();
       }
 
       function drawAnswerOnMainMap(q) {
@@ -686,6 +728,12 @@
         const k = Math.min(rect.width / imgW, rect.height / imgH);
         const x = (rect.width - imgW * k) / 2;
         const y = (rect.height - imgH * k) / 2;
+        const cover = Math.max(rect.width / imgW, rect.height / imgH);
+        const bx = (rect.width - imgW * cover) / 2;
+        const by = (rect.height - imgH * cover) / 2;
+        splitHistoricalImageBg.style.width = `${imgW}px`;
+        splitHistoricalImageBg.style.height = `${imgH}px`;
+        splitHistoricalImageBg.style.transform = `translate(${bx}px, ${by}px) scale(${cover})`;
         splitHistoricalImage.style.width = `${imgW}px`;
         splitHistoricalImage.style.height = `${imgH}px`;
         splitHistoricalImage.style.transform = `translate(${x}px, ${y}px) scale(${k})`;
@@ -695,13 +743,13 @@
         const img = new Image();
         img.onload = () => {
           imgW = img.width; imgH = img.height;
-          [historicalImg.src, historicalImgBg.src, splitHistoricalImage.src] = [url, url, url];
+          [historicalImg.src, historicalImgBg.src, splitHistoricalImage.src, splitHistoricalImageBg.src] = [url, url, url, url];
           requestAnimationFrame(() => { fitImage(); updateSplitImagePreview(); });
         };
         img.onerror = () => {
           const fallback = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260'><rect width='100%' height='100%' fill='#6c757d'/><text x='200' y='130' text-anchor='middle' fill='white' font-size='18'>Не загружено</text><text x='200' y='170' text-anchor='middle' fill='#f8f9fa' font-size='14'>${description}</text></svg>`)}`;
           imgW = 400; imgH = 260;
-          [historicalImg.src, historicalImgBg.src, splitHistoricalImage.src] = [fallback, fallback, fallback];
+          [historicalImg.src, historicalImgBg.src, splitHistoricalImage.src, splitHistoricalImageBg.src] = [fallback, fallback, fallback, fallback];
           requestAnimationFrame(() => { fitImage(); updateSplitImagePreview(); });
         };
         img.src = url;
@@ -744,6 +792,7 @@
         actionBtn.disabled = false;
         actionBtn.textContent = '✅ ПРОВЕРИТЬ';
         actionBtn.onclick = handleCheck;
+        splitNextBtn.onclick = null;
 
         setInfo('Определите место на карте и укажите наиболее вероятный год.', 2000);
         loadImage(q.imageUrl, q.description);
@@ -773,12 +822,12 @@
         splitViewDiv.classList.remove('hidden');
 
         distanceCard.textContent = `Разница в местоположении: ${res.distKm.toFixed(1)} км`;
-        resultDescription.textContent = q.description;
-        correctYearChip.textContent = q.correctYear;
-        yearDiffText.textContent = `Разница: ${res.yearDiff} лет`;
         distancePoints.textContent = res.pointsDist;
         yearPoints.textContent = res.pointsYear;
         roundPoints.textContent = res.total;
+        splitDistancePoints.textContent = res.pointsDist;
+        splitYearPoints.textContent = res.pointsYear;
+        splitRoundPoints.textContent = res.total;
         roundScoreCards.classList.remove('hidden');
 
         splitHistoricalImage.src = historicalImg.src;
@@ -788,9 +837,7 @@
         setInfo('Раунд завершён. Ознакомьтесь с результатом и перейдите к следующему вопросу.', 3200);
         renderAnswerSummary(q, res);
 
-        actionBtn.disabled = false;
-        actionBtn.textContent = '➡️ СЛЕДУЮЩИЙ ВОПРОС';
-        actionBtn.onclick = () => {
+        const goNext = () => {
           currentIndex += 1;
           if (currentIndex < currentQuestions.length) {
             loadQuestion();
@@ -799,6 +846,10 @@
             finishGame();
           }
         };
+        actionBtn.disabled = false;
+        actionBtn.textContent = '➡️ СЛЕДУЮЩИЙ ВОПРОС';
+        actionBtn.onclick = goNext;
+        splitNextBtn.onclick = goNext;
       }
 
       function finishGame() {
@@ -829,9 +880,23 @@
           byId('menuScreen').classList.remove('hidden');
           map?.destroy(); map = null;
           splitMap?.destroy(); splitMap = null;
+          selectorMap?.destroy(); selectorMap = null;
         };
 
         finalButtons.append(againBtn, menuBtn);
+        if (gameMode === 'multi') {
+          const lbBtn = document.createElement('button');
+          lbBtn.className = 'modal-btn';
+          lbBtn.textContent = 'Таблица лидеров';
+          lbBtn.onclick = () => {
+            byId('finalModal').classList.add('hidden');
+            byId('gameScreen').classList.add('hidden');
+            byId('menuScreen').classList.add('hidden');
+            byId('leaderboardScreen').classList.remove('hidden');
+            renderLeaderboard();
+          };
+          finalButtons.append(lbBtn);
+        }
         byId('finalModal').classList.remove('hidden');
         clearGameState();
       }
@@ -844,8 +909,10 @@
 
         if (map) { map.destroy(); map = null; }
         if (splitMap) { splitMap.destroy(); splitMap = null; }
+        if (selectorMap) { selectorMap.destroy(); selectorMap = null; }
 
         await initMainMap();
+        await initSelectorMap();
 
         if (useSaved && mode === 'single') {
           const saved = loadGameState();
@@ -1057,6 +1124,7 @@
         byId('finalModal').classList.add('hidden');
         map?.destroy(); map = null;
         splitMap?.destroy(); splitMap = null;
+        selectorMap?.destroy(); selectorMap = null;
       });
 
       window.addEventListener('resize', () => {
@@ -1065,6 +1133,7 @@
             if (currentView === 'image' && !questionAnswered) fitImage();
             map?.container.fitToViewport();
             splitMap?.container.fitToViewport();
+            selectorMap?.container.fitToViewport();
             updateSplitImagePreview();
           }
         });
