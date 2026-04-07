@@ -522,9 +522,6 @@
       const yearSliderArea = byId('yearSliderArea');
       const roundScoreCards = byId('roundScoreCards');
       const distanceCard = byId('distanceCard');
-      const distancePoints = byId('distancePoints');
-      const yearPoints = byId('yearPoints');
-      const roundPoints = byId('roundPoints');
       const splitDistancePoints = byId('splitDistancePoints');
       const splitYearPoints = byId('splitYearPoints');
       const splitRoundPoints = byId('splitRoundPoints');
@@ -1014,6 +1011,7 @@
         yearValueDisplay.textContent = selectedYear;
 
         actionBtn.disabled = false;
+        actionBtn.style.display = '';
         actionBtn.textContent = '✅ ПРОВЕРИТЬ';
         actionBtn.onclick = handleCheck;
         splitNextBtn.onclick = null;
@@ -1044,7 +1042,9 @@
         yearSliderArea.style.display = 'none';
         toggleViewDiv.classList.add('hidden');
         splitViewDiv.classList.remove('hidden');
-
+        actionBtn.style.display = 'none';
+        roundScoreCards.classList.add('hidden');
+        
         // На ПК infoBlock скрыт — вся инфа в splitView
         if (isDesktop()) {
           infoBlock.style.display = 'none';
@@ -1055,13 +1055,6 @@
         splitDistancePoints.textContent = res.pointsDist;
         splitYearPoints.textContent = res.pointsYear;
         splitRoundPoints.textContent = res.total;
-        // На мобильной control-bar ещё виден — показываем и там
-        if (!isDesktop()) {
-          distancePoints.textContent = res.pointsDist;
-          yearPoints.textContent = res.pointsYear;
-          roundPoints.textContent = res.total;
-          roundScoreCards.classList.remove('hidden');
-        }
 
         byId('splitAnswerDescription').textContent = q.description;
         byId('splitCorrectYear').textContent = q.correctYear;
@@ -1085,9 +1078,6 @@
             finishGame();
           }
         };
-        actionBtn.disabled = false;
-        actionBtn.textContent = '➡️ СЛЕДУЮЩИЙ ВОПРОС';
-        actionBtn.onclick = goNext;
         splitNextBtn.onclick = goNext;
       }
 
