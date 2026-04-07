@@ -65,16 +65,40 @@
     .info-block {
       padding: 10px 16px 0; color: #1f2937; font-size: .97rem; line-height: 1.45;
     }
+    .info-block.compact {
+      padding: 8px 10px;
+      min-height: 0 !important;
+      line-height: 1.25;
+      display: inline-block;
+      width: auto;
+      align-self: flex-start;
+    }
 
     .game-layout {
       flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr;
       padding: 0 0 max(10px, env(safe-area-inset-bottom));
+      overflow: hidden;
     }
     .main-area {
       position: relative; min-height: 0; border-top: 1px solid #dbe3ef; border-bottom: 1px solid #dbe3ef;
       margin-top: 8px; overflow: hidden; border-radius: 0;
     }
     .control-bar { padding: 10px 8px 14px; display: flex; flex-direction: column; gap: 10px; }
+    #gameScreen.result-mode .control-bar { display: none !important; }
+    #gameScreen.result-mode .game-layout {
+      grid-template-rows: 1fr !important;
+      padding-bottom: 0 !important;
+      gap: 0 !important;
+    }
+    #gameScreen.result-mode .main-area {
+      border: none !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    #gameScreen.result-mode .split-container {
+      background: #ffffff !important;
+    }
 
     @media (min-width: 980px) {
       /* На ПК только одна колонка — mainArea занимает всё, control-bar снизу */
@@ -148,38 +172,48 @@
     .switch-btn:active { transform: scale(.96); }
     .switch-btn.dragging { transition: none; cursor: grabbing; }
 
-   .split-container {
-      position: absolute; inset: 0; overflow: auto; padding: 10px;
+    .split-container {
+      position: absolute; inset: 0; overflow: hidden; padding: 10px;
       background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
     }
     .split-columns {
-      display: flex; flex-direction: column; gap: 10px; max-width: 1100px; margin: 0 auto;
+      display: grid;
+      grid-template-rows: auto minmax(130px, 2fr) auto minmax(120px, 1.4fr) auto;
+      gap: 8px;
+      max-width: 1100px;
+      margin: 0 auto;
+      height: 100%;
+      min-height: 0;
     }
     .split-answer-block {
-      background: #ffffff; border: 1px solid #dbe3ef; border-radius: 14px; padding: 12px;
+      background: #ffffff; border: none; border-radius: 14px; padding: 12px;
       box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
     }
     .result-description { font-size: clamp(1rem, 2.2vw, 1.2rem); font-weight: 800; color: #0f172a; line-height: 1.35; }
     .result-year-row { margin-top: 9px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
     .year-chip {
-      border: 2px solid #1e3a8a; border-radius: 10px; padding: 5px 10px;
-      font-weight: 800; color: #1e3a8a; background: #eff6ff;
+      border: 2px solid #1e3a8a;
+      border-radius: 10px;
+      padding: 5px 10px;
+      font-weight: 800;
+      color: #1e3a8a;
+      background: #eff6ff;
     }
     .year-diff {
-      display: flex; align-items: center; border-radius: 10px; padding: 6px 10px;
-      color: #334155; font-weight: 700; background: #f8fafc; border: 1px solid #dbe3ef;
+      display: flex; align-items: center;
+      color: #334155; font-weight: 700;
     }
     .split-map, .split-image {
-      min-height: 220px; border-radius: 14px; overflow: hidden; background: #eef2f6; position: relative;
-      border: 1px solid #dbe3ef;
+      min-height: 0; border-radius: 14px; overflow: hidden; background: #eef2f6; position: relative;
+      border: none;
     }
     .distance-card {
-      border: 1px solid #bfd5ff; border-radius: 12px; padding: 10px 12px;
+      border: none; border-radius: 12px; padding: 10px 12px;
       font-weight: 800; color: #1e3a8a; text-align: center; background: #eff6ff;
     }
     .split-right-controls { display: flex; flex-direction: column; gap: 10px; }
     .split-score-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-
+    .split-next-btn { width: 100%; }
 
     .year-slider-area { border: 1px solid #dbe3ef; border-radius: 12px; padding: 10px 12px; background: #f8fafc; }
     .year-display { text-align: center; font-size: 1.2rem; font-weight: 800; margin-bottom: 6px; }
@@ -266,17 +300,25 @@
       .control-bar { padding: 8px 8px 10px; }
       .year-slider-area { padding: 8px 10px; }
       .split-container { padding: 8px; }
-      .split-map { min-height: 190px; }
-      .split-image { min-height: 180px; }
+      .split-columns {
+        grid-template-rows: auto minmax(110px, 1.8fr) auto minmax(100px, 1.3fr) auto;
+      }
+      .split-score-grid { gap: 6px; }
+      .score-card { padding: 6px; }
+      .score-card span { font-size: .68rem; }
+      .score-card strong { font-size: .95rem; }
+      .big-btn { padding: 10px 12px; }
     }
 
     /* Desktop result scene */
     @media (min-width: 980px) {
       .split-container { padding: 12px; }
-      .split-columns { gap: 12px; }
-      .split-map { min-height: 320px; }
-      .split-image { min-height: 250px; }
+      .split-columns {
+        gap: 10px;
+        grid-template-rows: auto minmax(180px, 2.2fr) auto minmax(150px, 1.5fr) auto;
+      }
       .split-right-controls { max-width: 760px; width: 100%; margin: 0 auto; }
+    }
 
     .ymaps-copyrights-pane, .ymaps-logo, .ymaps-copyright,
     [class*="ymaps-copyright"], [class*="ymaps-logo"],
@@ -405,36 +447,35 @@
 
         <div id="splitView" class="split-container hidden">
           <div class="split-columns">
-              <div id="splitAnswerBlock" class="split-answer-block">
-                <div id="splitAnswerDescription" class="result-description">—</div>
-                <div class="result-year-row">
-                  <span class="year-chip">Правильный год: <span id="splitCorrectYear">—</span></span>
-                  <span class="year-chip">Год: <span id="splitCorrectYear">—</span></span>
-                  <span class="year-diff">Разница: <span id="splitYearDiff">—</span> лет</span>
-                </div>
+            <div id="splitAnswerBlock" class="split-answer-block">
+              <div id="splitAnswerDescription" class="result-description">—</div>
+              <div class="result-year-row">
+                <span class="year-chip">Правильный год: <span id="splitCorrectYear">—</span></span>
+                <span class="year-diff">Разница: <span id="splitYearDiff">—</span> лет</span>
               </div>
+            </div>
             <div id="splitMap" class="split-map"></div>
             <div id="distanceCard" class="distance-card">Расстояние: —</div>
-              <div class="split-image">
-                <div id="splitImageWrapper" class="image-wrapper">
-                  <img id="splitHistoricalImageBg" class="historical-img historical-bg" src="" alt="" aria-hidden="true">
-                  <img id="splitHistoricalImage" class="historical-img" src="" alt="Историческое фото">
-                  <div class="image-overlay" aria-hidden="true"></div>
-                </div>
+            <div class="split-image">
+              <div id="splitImageWrapper" class="image-wrapper">
+                <img id="splitHistoricalImageBg" class="historical-img historical-bg" src="" alt="" aria-hidden="true">
+                <img id="splitHistoricalImage" class="historical-img" src="" alt="Историческое фото">
+                <div class="image-overlay" aria-hidden="true"></div>
               </div>
-              <div class="split-right-controls">
-                <div class="split-score-grid">
-                  <div class="score-card"><span>За место</span><strong id="splitDistancePoints">0</strong></div>
-                  <div class="score-card"><span>За год</span><strong id="splitYearPoints">0</strong></div>
-                  <div class="score-card"><span>За раунд</span><strong id="splitRoundPoints">0</strong></div>
-                </div>
-                <button id="splitNextBtn" class="big-btn split-next-btn">➡️ СЛЕДУЮЩИЙ ВОПРОС</button>
+            </div>
+            <div class="split-right-controls">
+              <div class="split-score-grid">
+                <div class="score-card"><span>За место</span><strong id="splitDistancePoints">0</strong></div>
+                <div class="score-card"><span>За год</span><strong id="splitYearPoints">0</strong></div>
+                <div class="score-card"><span>За раунд</span><strong id="splitRoundPoints">0</strong></div>
+              </div>
+              <button id="splitNextBtn" class="big-btn split-next-btn">➡️ СЛЕДУЮЩИЙ ВОПРОС</button>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="control-bar">
+      <div id="controlBar" class="control-bar">
         <div class="selector-map-wrap"><div id="selectorMap"></div></div>
         <div id="yearSliderArea" class="year-slider-area">
           <div id="yearValueDisplay" class="year-display">1950</div>
@@ -472,6 +513,7 @@
       const EDUCATION_ORGS = ['Не указано', 'Московский университет МВД России имени В. Я. Кикотя', 'Военная академия связи', 'Михайловская военная артиллерийская академия', 'Военно-космическая академия им. А.Ф. Можайского', 'Военно-медицинская академия', 'Другое'];
 
       const byId = (id) => document.getElementById(id);
+      const gameScreen = byId('gameScreen');
       const yearSlider = byId('yearSlider');
       const yearValueDisplay = byId('yearValueDisplay');
       const actionBtn = byId('actionBtn');
@@ -486,11 +528,13 @@
       const selectorMapDiv = byId('selectorMap');
       const yearSliderArea = byId('yearSliderArea');
       const roundScoreCards = byId('roundScoreCards');
+      const controlBar = byId('controlBar');
       const distanceCard = byId('distanceCard');
       const splitDistancePoints = byId('splitDistancePoints');
       const splitYearPoints = byId('splitYearPoints');
       const splitRoundPoints = byId('splitRoundPoints');
       const splitNextBtn = byId('splitNextBtn');
+      const zoomButtons = imageView.querySelector('.zoom-buttons');
       const switchViewBtn = byId('switchViewBtn');
       const switchIcon = byId('switchIcon');
       const playerOrgSelect = byId('playerOrgSelect');
@@ -955,11 +999,15 @@
         totalScoreSpan.textContent = Math.floor(totalPoints);
         yearSliderArea.style.display = '';
         roundScoreCards.classList.add('hidden');
+        gameScreen.classList.remove('result-mode');
+        controlBar.style.display = '';
+        zoomButtons.style.display = '';
         toggleViewDiv.classList.remove('hidden');
         splitViewDiv.classList.add('hidden');
         byId('splitAnswerDescription').textContent = '—';
         byId('splitCorrectYear').textContent = '—';
         byId('splitYearDiff').textContent = '—';
+        infoBlock.classList.remove('compact');
         infoBlock.style.display = '';
 
         // На ПК карта всегда видна рядом с фото
@@ -1008,9 +1056,12 @@
         yearSliderArea.style.display = 'none';
         toggleViewDiv.classList.add('hidden');
         splitViewDiv.classList.remove('hidden');
+        gameScreen.classList.add('result-mode');
+        controlBar.style.display = 'none';
+        zoomButtons.style.display = 'none';
         actionBtn.style.display = 'none';
         roundScoreCards.classList.add('hidden');
-        
+
         // На ПК infoBlock скрыт — вся инфа в splitView
         if (isDesktop()) {
           infoBlock.style.display = 'none';
@@ -1032,6 +1083,7 @@
 
         // На мобильной показываем краткое сообщение в infoBlock (без дублирования данных)
         if (!isDesktop()) {
+          infoBlock.classList.add('compact');
           infoBlock.innerHTML = 'Раунд завершён. Перейдите к следующему вопросу.';
         }
 
