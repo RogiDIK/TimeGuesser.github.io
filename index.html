@@ -1003,15 +1003,18 @@
           splitImagePane.style.height = '';
           return;
         }
-        const totalHeight = splitColumns.clientHeight;
-        if (!totalHeight) return;
+        const viewportH = Math.floor(window.visualViewport?.height || window.innerHeight || 0);
+        if (!viewportH) return;
+        const colsRect = splitColumns.getBoundingClientRect();
+        const visibleHeight = Math.max(0, viewportH - colsRect.top - 6);
+        if (!visibleHeight) return;
         const styles = getComputedStyle(splitColumns);
         const gap = parseFloat(styles.rowGap || styles.gap || '0') || 0;
         const fixedHeight = splitAnswerBlock.offsetHeight + distanceCard.offsetHeight + splitRightControls.offsetHeight + gap * 4;
-        // Небольшой запас, чтобы кнопка гарантированно не уезжала за нижний край.
-        const reservePx = 18;
-        const available = Math.max(0, totalHeight - fixedHeight - reservePx);
-        const shared = Math.max(48, Math.floor(available / 2));
+        // Запас под системные панели/погрешности, чтобы кнопка всегда оставалась в видимой зоне.
+        const reservePx = 28;
+        const available = Math.max(0, visibleHeight - fixedHeight - reservePx);
+        const shared = Math.max(40, Math.floor(available / 2));
         splitMapDiv.style.height = `${shared}px`;
         splitImagePane.style.height = `${shared}px`;
       }
@@ -1142,6 +1145,10 @@
         updateMobileResultLayout();
         updateSplitImagePreview();
         initSplitMap().catch(console.error);
+        requestAnimationFrame(() => {
+          updateMobileResultLayout();
+          updateSplitImagePreview();
+        });
 
         const goNext = () => {
           currentIndex += 1;
@@ -1464,6 +1471,15 @@
             selectorMap?.container.fitToViewport();
             updateMobileResultLayout();
             updateSplitImagePreview();
+          }
+        });
+      });
+      window.visualViewport?.addEventListener('resize', () => {
+        requestAnimationFrame(() => {
+          if (!byId('gameScreen').classList.contains('hidden')) {
+            updateMobileResultLayout();
+            updateSplitImagePreview();
+            splitMap?.container.fitToViewport();
           }
         });
       });
