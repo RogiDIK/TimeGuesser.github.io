@@ -320,7 +320,7 @@
       .split-next-btn { padding: 8px 10px; font-size: .88rem; }
       #gameScreen.result-mode .split-container { padding: 4px; }
       #gameScreen.result-mode .split-columns {
-        grid-template-rows: max-content minmax(0, 1fr) max-content minmax(0, 1fr) max-content;
+        grid-template-rows: max-content auto max-content auto max-content;
         gap: 3px;
       }
       #gameScreen.result-mode .split-answer-block { padding: 6px 8px; border-radius: 10px; }
@@ -564,7 +564,11 @@
       const imageView = byId('imageView');
       const toggleViewDiv = byId('toggleView');
       const splitViewDiv = byId('splitView');
+      const splitColumns = splitViewDiv.querySelector('.split-columns');
       const splitMapDiv = byId('splitMap');
+      const splitAnswerBlock = byId('splitAnswerBlock');
+      const splitImagePane = splitViewDiv.querySelector('.split-image');
+      const splitRightControls = splitViewDiv.querySelector('.split-right-controls');
       const selectorMapDiv = byId('selectorMap');
       const yearSliderArea = byId('yearSliderArea');
       const roundScoreCards = byId('roundScoreCards');
@@ -993,6 +997,23 @@
         splitHistoricalImage.style.transform = `translate(${x}px, ${y}px) scale(${k})`;
       }
 
+      function updateMobileResultLayout() {
+        if (isDesktop() || splitViewDiv.classList.contains('hidden') || !gameScreen.classList.contains('result-mode')) {
+          splitMapDiv.style.height = '';
+          splitImagePane.style.height = '';
+          return;
+        }
+        const totalHeight = splitColumns.clientHeight;
+        if (!totalHeight) return;
+        const styles = getComputedStyle(splitColumns);
+        const gap = parseFloat(styles.rowGap || styles.gap || '0') || 0;
+        const fixedHeight = splitAnswerBlock.offsetHeight + distanceCard.offsetHeight + splitRightControls.offsetHeight + gap * 4;
+        const available = Math.max(0, totalHeight - fixedHeight);
+        const shared = Math.floor(available / 2);
+        splitMapDiv.style.height = `${shared}px`;
+        splitImagePane.style.height = `${shared}px`;
+      }
+
       function loadImage(url, description) {
         const img = new Image();
         img.onload = () => {
@@ -1116,6 +1137,7 @@
         byId('splitYearDiff').textContent = res.yearDiff;
 
         splitHistoricalImage.src = historicalImg.src;
+        updateMobileResultLayout();
         updateSplitImagePreview();
         initSplitMap().catch(console.error);
 
@@ -1438,6 +1460,7 @@
             map?.container.fitToViewport();
             splitMap?.container.fitToViewport();
             selectorMap?.container.fitToViewport();
+            updateMobileResultLayout();
             updateSplitImagePreview();
           }
         });
