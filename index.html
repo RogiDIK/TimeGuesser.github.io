@@ -1008,8 +1008,10 @@
         const styles = getComputedStyle(splitColumns);
         const gap = parseFloat(styles.rowGap || styles.gap || '0') || 0;
         const fixedHeight = splitAnswerBlock.offsetHeight + distanceCard.offsetHeight + splitRightControls.offsetHeight + gap * 4;
-        const available = Math.max(0, totalHeight - fixedHeight);
-        const shared = Math.floor(available / 2);
+        // Небольшой запас, чтобы кнопка гарантированно не уезжала за нижний край.
+        const reservePx = 18;
+        const available = Math.max(0, totalHeight - fixedHeight - reservePx);
+        const shared = Math.max(48, Math.floor(available / 2));
         splitMapDiv.style.height = `${shared}px`;
         splitImagePane.style.height = `${shared}px`;
       }
